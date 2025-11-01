@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 using System;
@@ -21,13 +21,35 @@ namespace CSharp_AutoChatV2
         public string Token = "";
         public async Task StartAsync()
         {
-            try            {
-                string json = File.ReadAllText(Environment.CurrentDirectory + @"\Configs\Token.json");
-                Token = JsonConvert.DeserializeObject<string>(json);            }            catch (Exception)            {                Log("Cant import key from json file!", ConsoleColor.Red);            }
+            // Try to load token from environment variable first
+            Token = Environment.GetEnvironmentVariable("DISCORD_TOKEN");
+
+            if (string.IsNullOrWhiteSpace(Token))
+            {
+                // Fallback to JSON file if environment variable is not set
+                try
+                {
+                    string json = File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "Configs", "Token.json"));
+                    Token = JsonConvert.DeserializeObject<string>(json);
+                    await Log("Token loaded from JSON file", ConsoleColor.Yellow);
+                }
+                catch (Exception)
+                {
+                    Log("Cannot import token from environment variable or JSON file!", ConsoleColor.Red);
+                }
+            }
+            else
+            {
+                await Log("Token loaded from DISCORD_TOKEN environment variable", ConsoleColor.Green);
+            }
             try
             {
                 await Log("Setting up the bot", ConsoleColor.Green);
-            _client = new DiscordSocketClient();
+            var config = new DiscordSocketConfig
+            {
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+            };
+            _client = new DiscordSocketClient(config);
             _handler = new CommandHandler(_client);
             await Log("Logging in...", ConsoleColor.Green);
             await _client.LoginAsync(TokenType.Bot, Token);
@@ -55,10 +77,10 @@ namespace CSharp_AutoChatV2
             Console.WriteLine(DateTime.Now + " : " + message, color);
             Console.ResetColor();
         }
-       
-        public static string Replaceemoji(string inn)        {            string result = Regex.Replace(inn, @"\p{Cs}", "_");            return result;        }
-        public static string removeemoji(string inn)        {            string result = Regex.Replace(inn, @"\p{Cs}", "");            return result;        }        public static string V_NameConverter(string input)        {            string output =                "v_" +                input.                ToLower().                Replace(" ", "_").                Replace(":", "").                Replace(@"/", "_").                Replace(".", "_").                Replace("#", "_").                Replace("(", "_").                Replace(")", "_").                Replace("!", "_").                Replace("|", "_").                Replace("@", "_").                Replace("£", "_").                Replace("\"", "_").                Replace("{", "_").                Replace("}", "_").                Replace("%", "_").                Replace("$", "_").                Replace("¤", "_").                Replace("&", "_").                Replace("\\", "_").                Replace("[", "_").                Replace("]", "_").                Replace("=", "_").                Replace("+", "_").                Replace("?", "_").                Replace("`", "_").                Replace("¨", "_").                Replace("^", "_").                Replace("~", "_").                Replace("*", "_").                Replace("*", "_").                Replace("'", "_").                Replace(",", "_").                Replace(".", "_").                Replace(":", "_").                Replace(";", "_").                Replace("<", "_").                Replace(">", "_");            return Replaceemoji(output);        }        public static string NameConverter(string input)        {            string output =
-                input.                ToLower().                Replace(" ", "_").                Replace(":", "").                Replace(@"/", "_").                Replace(".", "_").                Replace("#", "_").                Replace("(", "_").                Replace(")", "_").                Replace("!", "_").                Replace("|", "_").                Replace("@", "_").                Replace("£", "_").                Replace("\"", "_").                Replace("{", "_").                Replace("}", "_").                Replace("%", "_").                Replace("$", "_").                Replace("¤", "_").                Replace("&", "_").                Replace("\\", "_").                Replace("[", "_").                Replace("]", "_").                Replace("=", "_").                Replace("+", "_").                Replace("?", "_").                Replace("`", "_").                Replace("¨", "_").                Replace("^", "_").                Replace("~", "_").                Replace("*", "_").                Replace("*", "_").                Replace("'", "_").                Replace(",", "_").                Replace(".", "_").                Replace(":", "_").                Replace(";", "_").                Replace("<", "_").                Replace(">", "_");            return removeemoji(output);        }
-    
+
+        public static string Replaceemoji(string inn)        {            string result = Regex.Replace(inn, @"\p{Cs}", "_");            return result;        }
+        public static string removeemoji(string inn)        {            string result = Regex.Replace(inn, @"\p{Cs}", "");            return result;        }        public static string V_NameConverter(string input)        {            string output =                "v_" +                input.                ToLower().                Replace(" ", "_").                Replace(":", "").                Replace(@"/", "_").                Replace(".", "_").                Replace("#", "_").                Replace("(", "_").                Replace(")", "_").                Replace("!", "_").                Replace("|", "_").                Replace("@", "_").                Replace("£", "_").                Replace("\"", "_").                Replace("{", "_").                Replace("}", "_").                Replace("%", "_").                Replace("$", "_").                Replace("¤", "_").                Replace("&", "_").                Replace("\\", "_").                Replace("[", "_").                Replace("]", "_").                Replace("=", "_").                Replace("+", "_").                Replace("?", "_").                Replace("`", "_").                Replace("¨", "_").                Replace("^", "_").                Replace("~", "_").                Replace("*", "_").                Replace("*", "_").                Replace("'", "_").                Replace(",", "_").                Replace(".", "_").                Replace(":", "_").                Replace(";", "_").                Replace("<", "_").                Replace(">", "_");            return Replaceemoji(output);        }        public static string NameConverter(string input)        {            string output =
+                input.                ToLower().                Replace(" ", "_").                Replace(":", "").                Replace(@"/", "_").                Replace(".", "_").                Replace("#", "_").                Replace("(", "_").                Replace(")", "_").                Replace("!", "_").                Replace("|", "_").                Replace("@", "_").                Replace("£", "_").                Replace("\"", "_").                Replace("{", "_").                Replace("}", "_").                Replace("%", "_").                Replace("$", "_").                Replace("¤", "_").                Replace("&", "_").                Replace("\\", "_").                Replace("[", "_").                Replace("]", "_").                Replace("=", "_").                Replace("+", "_").                Replace("?", "_").                Replace("`", "_").                Replace("¨", "_").                Replace("^", "_").                Replace("~", "_").                Replace("*", "_").                Replace("*", "_").                Replace("'", "_").                Replace(",", "_").                Replace(".", "_").                Replace(":", "_").                Replace(";", "_").                Replace("<", "_").                Replace(">", "_");            return removeemoji(output);        }
+
 }
 }

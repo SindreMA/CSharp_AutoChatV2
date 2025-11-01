@@ -139,3 +139,7 @@ App.config
 Token.json
 *.token
 *.key
+
+# Environment variables
+.env
+.env.local
