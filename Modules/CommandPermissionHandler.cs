@@ -43,7 +43,7 @@ namespace CSharp_AutoChatV2.Modules
         {
             try
             {
-                string json = File.ReadAllText("Permissions.json");
+                string json = File.ReadAllText("Configs/Permissions.json");
                 Permissions = JsonConvert.DeserializeObject<List<PermissionClass>>(json);
             }
             catch (Exception)
@@ -100,7 +100,7 @@ namespace CSharp_AutoChatV2.Modules
             }
             else if (NR == 1024)
             {
-                return GuildPermission.ReadMessages;
+                return GuildPermission.ViewChannel;
             }
             else if (NR == 2048)
             {
@@ -176,7 +176,7 @@ namespace CSharp_AutoChatV2.Modules
             }
             else if (NR == 1073741824)
             {
-                return GuildPermission.ManageEmojis;
+                return GuildPermission.ManageEmojisAndStickers;
             }
 
             else
@@ -219,7 +219,7 @@ namespace CSharp_AutoChatV2.Modules
             {
                 return true;
             }
-            else if (permission == GuildPermission.ReadMessages && userPermissions.ReadMessages)
+            else if (permission == GuildPermission.ViewChannel && userPermissions.ViewChannel)
             {
                 return true;
             }
@@ -291,7 +291,7 @@ namespace CSharp_AutoChatV2.Modules
             {
                 return true;
             }
-            else if (permission == GuildPermission.ManageEmojis && userPermissions.ManageEmojis)
+            else if (permission == GuildPermission.ManageEmojisAndStickers && userPermissions.ManageEmojisAndStickers)
             {
                 return true;
             }

@@ -33,13 +33,13 @@ namespace TemplateBot
         {
             _client = client;
             _service = new CommandService();
-            _service.AddModulesAsync(Assembly.GetEntryAssembly());
+            _service.AddModulesAsync(Assembly.GetEntryAssembly(), null);
             _client.MessageReceived += _client_MessageReceived;
             _client.UserVoiceStateUpdated += _client_UserVoiceStateUpdated;
 
             try
             {
-                string json = File.ReadAllText("CatagoryGuilds.json");
+                string json = File.ReadAllText("Configs/CatagoryGuilds.json");
                 CatagoryGuilds = JsonConvert.DeserializeObject<List<Catagory>>(json);
             }
             catch (Exception)
@@ -47,7 +47,7 @@ namespace TemplateBot
             }
             try
             {
-                string json = File.ReadAllText("ignoreafk.json");
+                string json = File.ReadAllText("Configs/ignoreafk.json");
                 ignoreafk = JsonConvert.DeserializeObject<List<string>>(json);
             }
             catch (Exception)
@@ -55,7 +55,7 @@ namespace TemplateBot
             }
             try
             {
-                string json = File.ReadAllText("AutoClarGuilds.json");
+                string json = File.ReadAllText("Configs/AutoClarGuilds.json");
                 AutoclearList = JsonConvert.DeserializeObject<List<string>>(json);
             }
             catch (Exception)
@@ -63,7 +63,7 @@ namespace TemplateBot
             }
             try
             {
-                string json = File.ReadAllText("AutoCreator.json");
+                string json = File.ReadAllText("Configs/AutoCreator.json");
                 AutoCreator = JsonConvert.DeserializeObject<List<string>>(json);
             }
             catch (Exception)
@@ -71,7 +71,7 @@ namespace TemplateBot
             }
             try
             {
-                string json = File.ReadAllText("UsingTopic.json");
+                string json = File.ReadAllText("Configs/UsingTopic.json");
                 UseTopic = JsonConvert.DeserializeObject<List<string>>(json);
             }
             catch (Exception)
@@ -79,7 +79,7 @@ namespace TemplateBot
             }
             try
             {
-                string json = File.ReadAllText("VoiceMsgState.json");
+                string json = File.ReadAllText("Configs/VoiceMsgState.json");
                 VoiceON = JsonConvert.DeserializeObject<List<string>>(json);
             }
             catch (Exception)
@@ -87,7 +87,7 @@ namespace TemplateBot
             }
             try
             {
-                string json = File.ReadAllText("SavedPermission.json");
+                string json = File.ReadAllText("Configs/SavedPermission.json");
                 SavedPermission = JsonConvert.DeserializeObject<List<PermissionAndGuildDTO>>(json);
             }
             catch (Exception)
@@ -292,7 +292,7 @@ namespace TemplateBot
                             manageWebhooks = PermValue.Deny;
                         }
                         AllowPerm = new OverwritePermissions(
-                        readMessages: readMessages,
+                        viewChannel: readMessages,
                         readMessageHistory: readMessageHistory,
                         sendMessages: sendMessages,
                         attachFiles: attachFiles,
@@ -315,7 +315,7 @@ namespace TemplateBot
                 else
                 {
                     AllowPerm = new OverwritePermissions(
-                     readMessages: PermValue.Allow,
+                     viewChannel: PermValue.Allow,
                      readMessageHistory: PermValue.Allow,
                      sendMessages: PermValue.Allow,
                      attachFiles: PermValue.Allow,
@@ -596,7 +596,7 @@ namespace TemplateBot
             {
                 if (CommandPermissionHandler.IsAllowedToUseCommand(context))
                 {
-                    var result = _service.ExecuteAsync(context, argPost);
+                    var result = _service.ExecuteAsync(context, argPost, null);
                     if (!result.Result.IsSuccess && result.Result.Error != CommandError.UnknownCommand)
                     {
                         await context.Channel.SendMessageAsync(result.Result.ErrorReason);

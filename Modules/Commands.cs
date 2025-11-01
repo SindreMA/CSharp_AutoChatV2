@@ -59,7 +59,7 @@ namespace TemplateBot.Modules
                     {
                         CommandHandler.SavedPermission.Remove(item);
                         await Context.Channel.SendMessageAsync("Config have been deleted, you are now using default settings!");
-                        File.WriteAllText("SavedPermission.json", JsonConvert.SerializeObject(CommandHandler.SavedPermission));
+                        File.WriteAllText("Configs/SavedPermission.json", JsonConvert.SerializeObject(CommandHandler.SavedPermission));
                     }
                 }
             }
@@ -387,7 +387,7 @@ namespace TemplateBot.Modules
             permandguild.GuildID = Context.Guild.Id;
             permandguild.Permissions = newPermissions;
             CommandHandler.SavedPermission.Add(permandguild);
-            File.WriteAllText("SavedPermission.json", JsonConvert.SerializeObject(CommandHandler.SavedPermission));
+            File.WriteAllText("Configs/SavedPermission.json", JsonConvert.SerializeObject(CommandHandler.SavedPermission));
             await Context.Channel.SendMessageAsync("Changes have been saved!");
 
 
@@ -429,20 +429,20 @@ namespace TemplateBot.Modules
                 {
                     CommandHandler.AutoclearList.Remove((Context.Guild.Id.ToString()));
                     await Context.Channel.SendMessageAsync("Auto clearing is now off");
-                    File.WriteAllText("AutoClarGuilds.json", JsonConvert.SerializeObject(CommandHandler.AutoclearList));
+                    File.WriteAllText("Configs/AutoClarGuilds.json", JsonConvert.SerializeObject(CommandHandler.AutoclearList));
                 }
                 else if (!AutoChatIsOn)
                 {
                     CommandHandler.AutoclearList.Add((Context.Guild.Id.ToString()));
                     await Context.Channel.SendMessageAsync("Auto clearing is now on");
-                    File.WriteAllText("AutoClarGuilds.json", JsonConvert.SerializeObject(CommandHandler.AutoclearList));
+                    File.WriteAllText("Configs/AutoClarGuilds.json", JsonConvert.SerializeObject(CommandHandler.AutoclearList));
                 }
             }
             else
             {
                 CommandHandler.AutoclearList.Add((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Auto clearing is now on");
-                File.WriteAllText("AutoClarGuilds.json", JsonConvert.SerializeObject(CommandHandler.AutoclearList));
+                File.WriteAllText("Configs/AutoClarGuilds.json", JsonConvert.SerializeObject(CommandHandler.AutoclearList));
             }
         }//Put the guild in a list that makes it clear chat on 0 ppl
         [Command("AutoCreator")]
@@ -478,20 +478,20 @@ namespace TemplateBot.Modules
                 {
                     CommandHandler.AutoCreator.Remove((Context.Guild.Id.ToString()));
                     await Context.Channel.SendMessageAsync("Auto creating is now off");
-                    File.WriteAllText("AutoCreator.json", JsonConvert.SerializeObject(CommandHandler.AutoCreator));
+                    File.WriteAllText("Configs/AutoCreator.json", JsonConvert.SerializeObject(CommandHandler.AutoCreator));
                 }
                 else if (!AutoCreator)
                 {
                     CommandHandler.AutoCreator.Add((Context.Guild.Id.ToString()));
                     await Context.Channel.SendMessageAsync("Auto creating is now on");
-                    File.WriteAllText("AutoCreator.json", JsonConvert.SerializeObject(CommandHandler.AutoCreator));
+                    File.WriteAllText("Configs/AutoCreator.json", JsonConvert.SerializeObject(CommandHandler.AutoCreator));
                 }
             }
             else
             {
                 CommandHandler.AutoCreator.Add((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Auto creating is now on");
-                File.WriteAllText("AutoCreator.json", JsonConvert.SerializeObject(CommandHandler.AutoCreator));
+                File.WriteAllText("Configs/AutoCreator.json", JsonConvert.SerializeObject(CommandHandler.AutoCreator));
             }
         }//Put the guild in a list that makes it auto create the channels and delete them when not in use
         [Command("usetopic")]
@@ -501,13 +501,13 @@ namespace TemplateBot.Modules
             {
                 CommandHandler.UseTopic.Remove((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Using topic is now off");
-                File.WriteAllText("UsingTopic.json", JsonConvert.SerializeObject(CommandHandler.UseTopic));
+                File.WriteAllText("Configs/UsingTopic.json", JsonConvert.SerializeObject(CommandHandler.UseTopic));
             }
             else
             {
                 CommandHandler.UseTopic.Add((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Using topic is now on");
-                File.WriteAllText("UsingTopic.json", JsonConvert.SerializeObject(CommandHandler.UseTopic));
+                File.WriteAllText("Configs/UsingTopic.json", JsonConvert.SerializeObject(CommandHandler.UseTopic));
             }
 
         }
@@ -518,13 +518,13 @@ namespace TemplateBot.Modules
             {
                 CommandHandler.ignoreafk.Remove((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Using ignoreafk is now off");
-                File.WriteAllText("ignoreafk.json", JsonConvert.SerializeObject(CommandHandler.ignoreafk));
+                File.WriteAllText("Configs/ignoreafk.json", JsonConvert.SerializeObject(CommandHandler.ignoreafk));
             }
             else
             {
                 CommandHandler.ignoreafk.Add((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Using ignoreafk is now on");
-                File.WriteAllText("ignoreafk.json", JsonConvert.SerializeObject(CommandHandler.ignoreafk));
+                File.WriteAllText("Configs/ignoreafk.json", JsonConvert.SerializeObject(CommandHandler.ignoreafk));
             }
 
         }
@@ -750,20 +750,20 @@ namespace TemplateBot.Modules
                 {
                     CommandHandler.VoiceON.Remove((Context.Guild.Id.ToString()));
                     await Context.Channel.SendMessageAsync("Join/leave message is now off");
-                    File.WriteAllText("VoiceMsgState.json", JsonConvert.SerializeObject(CommandHandler.VoiceON));
+                    File.WriteAllText("Configs/VoiceMsgState.json", JsonConvert.SerializeObject(CommandHandler.VoiceON));
                 }
                 else if (!VoiceISON)
                 {
                     CommandHandler.VoiceON.Add((Context.Guild.Id.ToString()));
                     await Context.Channel.SendMessageAsync("Join/leave message is now on");
-                    File.WriteAllText("VoiceMsgState.json", JsonConvert.SerializeObject(CommandHandler.VoiceON));
+                    File.WriteAllText("Configs/VoiceMsgState.json", JsonConvert.SerializeObject(CommandHandler.VoiceON));
                 }
             }
             else
             {
                 CommandHandler.VoiceON.Add((Context.Guild.Id.ToString()));
                 await Context.Channel.SendMessageAsync("Join/leave message is now on");
-                File.WriteAllText("VoiceMsgState.json", JsonConvert.SerializeObject(CommandHandler.VoiceON));
+                File.WriteAllText("Configs/VoiceMsgState.json", JsonConvert.SerializeObject(CommandHandler.VoiceON));
             }
 
         }
@@ -913,7 +913,7 @@ namespace TemplateBot.Modules
 
         
                 await Context.Channel.SendMessageAsync("Default category have been set/changed!");
-                File.WriteAllText("CatagoryGuilds.json", JsonConvert.SerializeObject(CommandHandler.CatagoryGuilds));
+                File.WriteAllText("Configs/CatagoryGuilds.json", JsonConvert.SerializeObject(CommandHandler.CatagoryGuilds));
 
             }
             else
@@ -959,7 +959,7 @@ namespace TemplateBot.Modules
 
 
             var AllowPerm = new OverwritePermissions(
-              readMessages: PermValue.Allow,
+              viewChannel: PermValue.Allow,
               readMessageHistory: PermValue.Allow,
               sendMessages: PermValue.Allow,
               attachFiles: PermValue.Allow,

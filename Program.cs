@@ -14,28 +14,27 @@ namespace CSharp_AutoChatV2
 {
     class Program
     {
-        static void Main(string[] args)
-            => new Program().StartAsync().GetAwaiter().GetResult();
+        static async Task Main(string[] args)
+            => await new Program().StartAsync();
         private CommandHandler _handler;
         private DiscordSocketClient _client;
         public string Token = "";
         public async Task StartAsync()
         {
             try            {
-                string json = File.ReadAllText(Environment.CurrentDirectory + @"\Token.json");
+                string json = File.ReadAllText(Environment.CurrentDirectory + @"\Configs\Token.json");
                 Token = JsonConvert.DeserializeObject<string>(json);            }            catch (Exception)            {                Log("Cant import key from json file!", ConsoleColor.Red);            }
             try
             {
                 await Log("Setting up the bot", ConsoleColor.Green);
             _client = new DiscordSocketClient();
-            new CommandHandler(_client);
+            _handler = new CommandHandler(_client);
             await Log("Logging in...", ConsoleColor.Green);
             await _client.LoginAsync(TokenType.Bot, Token);
             await Log("Connecting...", ConsoleColor.Green);
             await _client.StartAsync();
             _client.GuildAvailable += _client_GuildAvailable;
             await Task.Delay(-1);
-            _handler = new CommandHandler(_client);
             }
             catch (Exception)
             {

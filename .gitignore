@@ -134,3 +134,8 @@ UpgradeLog*.htm
 
 # App config with sensitive data
 App.config
+
+# Bot token and sensitive configuration
+Token.json
+*.token
+*.key
