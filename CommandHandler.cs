@@ -365,13 +365,22 @@ namespace TemplateBot
                                 }
                                 if (AutoCreator.Exists(x => x == Server.Id.ToString()))
                                 {
+                                    await Program.Log($"[AutoCreator] Guild {Server.Id} has AutoCreator enabled", ConsoleColor.Cyan);
+                                    await Program.Log($"[AutoCreator] Voice channel users count: {State.VoiceChannel.Users.Count}", ConsoleColor.Cyan);
                                     if (State.VoiceChannel.Users.Count == 0)
                                     {
-                                        Thread.Sleep(150);
-                                        await channel.DeleteAsync();
-                                        await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
-
-                                        Thread.Sleep(150);
+                                        try
+                                        {
+                                            await Program.Log($"[AutoCreator] Attempting to delete text channel: {channel.Name} ({channel.Id})", ConsoleColor.Yellow);
+                                            Thread.Sleep(150);
+                                            await channel.DeleteAsync();
+                                            await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
+                                            Thread.Sleep(150);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            await Program.Log($"[AutoCreator] ERROR deleting channel: {ex.Message}", ConsoleColor.Red);
+                                        }
                                     }
                                 }
                             }
@@ -402,12 +411,21 @@ namespace TemplateBot
                                     }
                                     if (AutoCreator.Exists(x => x == Server.Id.ToString()))
                                     {
+                                        await Program.Log($"[AutoCreator-Topic] Guild {Server.Id} has AutoCreator enabled", ConsoleColor.Cyan);
+                                        await Program.Log($"[AutoCreator-Topic] Voice channel users count: {State.VoiceChannel.Users.Count}", ConsoleColor.Cyan);
                                         if (State.VoiceChannel.Users.Count == 0)
                                         {
-                                            await channel.DeleteAsync();
-                                            await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
-
-                                            Thread.Sleep(150);
+                                            try
+                                            {
+                                                await Program.Log($"[AutoCreator-Topic] Attempting to delete text channel: {channel.Name} ({channel.Id})", ConsoleColor.Yellow);
+                                                await channel.DeleteAsync();
+                                                await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
+                                                Thread.Sleep(150);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                await Program.Log($"[AutoCreator-Topic] ERROR deleting channel: {ex.Message}", ConsoleColor.Red);
+                                            }
                                         }
                                     }
                                 }
@@ -495,16 +513,29 @@ namespace TemplateBot
                     }
                     if (AutoCreator.Exists(x => x == arg3.VoiceChannel.Guild.Id.ToString()))
                     {
+                        await Program.Log($"[AutoCreator-Cleanup] Starting cleanup for guild {arg3.VoiceChannel.Guild.Id}", ConsoleColor.Cyan);
                         foreach (var item in arg3.VoiceChannel.Guild.VoiceChannels)
                         {
                             if (item.Users.Count == 0)
                             {
+                                await Program.Log($"[AutoCreator-Cleanup] Found empty voice channel: {item.Name} ({item.Id})", ConsoleColor.Cyan);
                                 if (arg3.VoiceChannel.Guild.TextChannels.ToList().Exists(x => x.Topic != null && x.Topic.Contains(item.Id.ToString())))
                                 {
                                     var channel = arg3.VoiceChannel.Guild.TextChannels.ToList().Find(x => x.Topic != null && x.Topic.Contains(item.Id.ToString()));
-                                    await channel.DeleteAsync();
-                                    await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
-
+                                    try
+                                    {
+                                        await Program.Log($"[AutoCreator-Cleanup] Deleting text channel: {channel.Name} ({channel.Id})", ConsoleColor.Yellow);
+                                        await channel.DeleteAsync();
+                                        await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        await Program.Log($"[AutoCreator-Cleanup] ERROR deleting channel: {ex.Message}", ConsoleColor.Red);
+                                    }
+                                }
+                                else
+                                {
+                                    await Program.Log($"[AutoCreator-Cleanup] No text channel found with topic containing {item.Id}", ConsoleColor.Yellow);
                                 }
                             }
                         }
