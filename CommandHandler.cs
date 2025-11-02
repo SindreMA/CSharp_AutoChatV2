@@ -103,6 +103,10 @@ namespace TemplateBot
 
         private async Task _client_UserVoiceStateUpdated(SocketUser arg1, SocketVoiceState arg2, SocketVoiceState arg3)
         {
+            await Program.Log($"[VoiceStateUpdate] User {arg1.Username} ({arg1.Id}) triggered voice state update", ConsoleColor.Magenta);
+            await Program.Log($"[VoiceStateUpdate] Old channel: {(arg2.VoiceChannel != null ? $"{arg2.VoiceChannel.Name} ({arg2.VoiceChannel.Id})" : "null")}", ConsoleColor.Magenta);
+            await Program.Log($"[VoiceStateUpdate] New channel: {(arg3.VoiceChannel != null ? $"{arg3.VoiceChannel.Name} ({arg3.VoiceChannel.Id})" : "null")}", ConsoleColor.Magenta);
+
             string guildID = "";
             bool Isdiffrent = false;
             if (arg2.VoiceChannel != null)
@@ -130,6 +134,7 @@ namespace TemplateBot
             }
             if (!Isdiffrent)
             {
+                await Program.Log($"[VoiceStateUpdate] Voice state is a channel change (not just mute/deaf change)", ConsoleColor.Magenta);
                 bool doesexist = false;
                 SocketVoiceState State3 = arg3;
                 OverwritePermissions AllowPerm = new OverwritePermissions();
@@ -332,15 +337,30 @@ namespace TemplateBot
                 }
                 if (arg2.VoiceChannel != arg3.VoiceChannel)
                 {
+                    await Program.Log($"[VoiceStateUpdate] User changed voice channels (LEFT old channel)", ConsoleColor.Magenta);
                     if (arg2.VoiceChannel != null)
                     {
                         var Server = arg2.VoiceChannel.Guild;
                         SocketVoiceState State = arg2;
+                        await Program.Log($"[VoiceStateUpdate] Processing LEFT event for guild {Server.Name} ({Server.Id})", ConsoleColor.Magenta);
+                        await Program.Log($"[VoiceStateUpdate] Voice channel after user left: {State.VoiceChannel.Name} has {State.VoiceChannel.Users.Count} users remaining", ConsoleColor.Magenta);
+
+                        // Log who the remaining users are
+                        if (State.VoiceChannel.Users.Count > 0)
+                        {
+                            await Program.Log($"[VoiceStateUpdate] Remaining users in {State.VoiceChannel.Name}:", ConsoleColor.Yellow);
+                            foreach (var user in State.VoiceChannel.Users)
+                            {
+                                await Program.Log($"[VoiceStateUpdate]   - {user.Username} ({user.Id}) [IsBot: {user.IsBot}]", ConsoleColor.Yellow);
+                            }
+                        }
+
                         if (Server.Users.Contains(arg1))
                         {
                             if (Server.TextChannels.ToList().Exists(x => x.Name == Program.V_NameConverter(State.VoiceChannel.Name)))
                             {
                                 var channel = Server.TextChannels.ToList().Find(x => x.Name == Program.V_NameConverter(State.VoiceChannel.Name));
+                                await Program.Log($"[VoiceStateUpdate] Found associated text channel by name: {channel.Name} ({channel.Id})", ConsoleColor.Magenta);
                                 if (VoiceON.Exists(x => x == Server.Id.ToString()))
                                 {
                                     await channel.SendMessageAsync(arg1.Username + " left the channel!");
@@ -352,10 +372,18 @@ namespace TemplateBot
                                 await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Permission have been removed!", ConsoleColor.Green);
 
                                 await CheckMembers(channel);
+
+                                // Calculate actual user count excluding bots and the user who just left
+                                var actualUserCount = State.VoiceChannel.Users.Where(u => !u.IsBot && u.Id != arg1.Id).Count();
+                                await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots and leaving user): {actualUserCount}", ConsoleColor.Yellow);
+
                                 if (AutoclearList.Exists(x => x == Server.Id.ToString()))
                                 {
-                                    if (State.VoiceChannel.Users.Count == 0)
+                                    await Program.Log($"[AutoClear] Guild {Server.Id} has AutoClear enabled", ConsoleColor.Cyan);
+                                    await Program.Log($"[AutoClear] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCount})", ConsoleColor.Cyan);
+                                    if (actualUserCount == 0)
                                     {
+                                        await Program.Log($"[AutoClear] Voice channel is empty, recreating text channel", ConsoleColor.Yellow);
                                         var name = channel.Name;
                                         var posi = channel.Position;
                                         await channel.DeleteAsync();
@@ -366,9 +394,10 @@ namespace TemplateBot
                                 if (AutoCreator.Exists(x => x == Server.Id.ToString()))
                                 {
                                     await Program.Log($"[AutoCreator] Guild {Server.Id} has AutoCreator enabled", ConsoleColor.Cyan);
-                                    await Program.Log($"[AutoCreator] Voice channel users count: {State.VoiceChannel.Users.Count}", ConsoleColor.Cyan);
-                                    if (State.VoiceChannel.Users.Count == 0)
+                                    await Program.Log($"[AutoCreator] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCount})", ConsoleColor.Cyan);
+                                    if (actualUserCount == 0)
                                     {
+                                        await Program.Log($"[AutoCreator] Voice channel is empty, deleting text channel permanently", ConsoleColor.Yellow);
                                         try
                                         {
                                             await Program.Log($"[AutoCreator] Attempting to delete text channel: {channel.Name} ({channel.Id})", ConsoleColor.Yellow);
@@ -382,14 +411,20 @@ namespace TemplateBot
                                             await Program.Log($"[AutoCreator] ERROR deleting channel: {ex.Message}", ConsoleColor.Red);
                                         }
                                     }
+                                    else
+                                    {
+                                        await Program.Log($"[AutoCreator] Voice channel still has users, keeping text channel", ConsoleColor.Yellow);
+                                    }
                                 }
                             }
                             else if (UseTopic.Exists(x => x == Server.Id.ToString()))
                             {
+                                await Program.Log($"[VoiceStateUpdate] UseTopic mode enabled, searching by topic", ConsoleColor.Magenta);
                                 var list = Server.TextChannels.ToList().FindAll(z => z.Topic != null);
                                 if (list.Exists(x => x.Topic.Contains(arg2.VoiceChannel.Id.ToString())))
                                 {
                                     var channel = list.Find(x => x.Topic.Contains(arg2.VoiceChannel.Id.ToString()));
+                                    await Program.Log($"[VoiceStateUpdate] Found associated text channel by topic: {channel.Name} ({channel.Id})", ConsoleColor.Magenta);
                                     if (VoiceON.Exists(x => x == Server.Id.ToString()))
                                     {
                                         await channel.SendMessageAsync(arg1.Username + " left the channel!");
@@ -398,10 +433,18 @@ namespace TemplateBot
                                     await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Permission have been removed!", ConsoleColor.Green);
 
                                     await CheckMembers(channel);
+
+                                    // Calculate actual user count excluding bots and the user who just left
+                                    var actualUserCountTopic = State.VoiceChannel.Users.Where(u => !u.IsBot && u.Id != arg1.Id).Count();
+                                    await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots and leaving user): {actualUserCountTopic}", ConsoleColor.Yellow);
+
                                     if (AutoclearList.Exists(x => x == Server.Id.ToString()))
                                     {
-                                        if (State.VoiceChannel.Users.Count == 0)
+                                        await Program.Log($"[AutoClear-Topic] Guild {Server.Id} has AutoClear enabled", ConsoleColor.Cyan);
+                                        await Program.Log($"[AutoClear-Topic] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCountTopic})", ConsoleColor.Cyan);
+                                        if (actualUserCountTopic == 0)
                                         {
+                                            await Program.Log($"[AutoClear-Topic] Voice channel is empty, recreating text channel", ConsoleColor.Yellow);
                                             var name = channel.Name;
                                             var posi = channel.Position;
                                             await channel.DeleteAsync();
@@ -412,9 +455,10 @@ namespace TemplateBot
                                     if (AutoCreator.Exists(x => x == Server.Id.ToString()))
                                     {
                                         await Program.Log($"[AutoCreator-Topic] Guild {Server.Id} has AutoCreator enabled", ConsoleColor.Cyan);
-                                        await Program.Log($"[AutoCreator-Topic] Voice channel users count: {State.VoiceChannel.Users.Count}", ConsoleColor.Cyan);
-                                        if (State.VoiceChannel.Users.Count == 0)
+                                        await Program.Log($"[AutoCreator-Topic] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCountTopic})", ConsoleColor.Cyan);
+                                        if (actualUserCountTopic == 0)
                                         {
+                                            await Program.Log($"[AutoCreator-Topic] Voice channel is empty, deleting text channel permanently", ConsoleColor.Yellow);
                                             try
                                             {
                                                 await Program.Log($"[AutoCreator-Topic] Attempting to delete text channel: {channel.Name} ({channel.Id})", ConsoleColor.Yellow);
@@ -427,8 +471,20 @@ namespace TemplateBot
                                                 await Program.Log($"[AutoCreator-Topic] ERROR deleting channel: {ex.Message}", ConsoleColor.Red);
                                             }
                                         }
+                                        else
+                                        {
+                                            await Program.Log($"[AutoCreator-Topic] Voice channel still has users, keeping text channel", ConsoleColor.Yellow);
+                                        }
                                     }
                                 }
+                                else
+                                {
+                                    await Program.Log($"[VoiceStateUpdate] No text channel found by topic for voice channel {arg2.VoiceChannel.Id}", ConsoleColor.Yellow);
+                                }
+                            }
+                            else
+                            {
+                                await Program.Log($"[VoiceStateUpdate] No text channel found by name: {Program.V_NameConverter(State.VoiceChannel.Name)}", ConsoleColor.Yellow);
                             }
                             if (Server.TextChannels.ToList().Exists(x => (x.Name == "voice-only" || x.Name == "voice_only") && arg3.VoiceChannel == null))
                             {
@@ -446,10 +502,12 @@ namespace TemplateBot
                 bool FoundChannel = false;
                 if (arg3.VoiceChannel != null)
                 {
+                    await Program.Log($"[VoiceStateUpdate] User JOINED a new voice channel: {arg3.VoiceChannel.Name} ({arg3.VoiceChannel.Id})", ConsoleColor.Magenta);
                     if (((ignoreafk.Exists(x => x == arg3.VoiceChannel.Guild.Id.ToString())) && arg3.VoiceChannel.Id != arg3.VoiceChannel.Guild.AFKChannel.Id) || !ignoreafk.Exists(x => x == arg3.VoiceChannel.Guild.Id.ToString()))
                     {
                         var Server = _client.GetGuild(arg3.VoiceChannel.Guild.Id);
                         SocketVoiceState State = arg3;
+                        await Program.Log($"[VoiceStateUpdate] Processing JOIN event for guild {Server.Name} ({Server.Id})", ConsoleColor.Magenta);
                         if (Server.Users.Contains(arg1))
                         {
                             if (Server.TextChannels.ToList().Exists(x => x.Name == Program.V_NameConverter(State.VoiceChannel.Name)))
@@ -492,9 +550,10 @@ namespace TemplateBot
                         }
                         if (!FoundChannel && AutoCreatorIsOn)
                         {
+                            await Program.Log($"[AutoCreator] No text channel found, creating new one", ConsoleColor.Cyan);
                             if (UseTopic.Exists(x => x == Server.Id.ToString()))
                             {
-
+                                await Program.Log($"[AutoCreator] Creating text channel with topic mode", ConsoleColor.Cyan);
                                 var channel = CreateTxtChan(arg3.VoiceChannel.Name, arg3.VoiceChannel.Guild, false, arg3.VoiceChannel.Position + 20, AllowPerm, arg1, true, arg3.VoiceChannel.Id);
                                 if (VoiceON.Exists(x => x == Server.Id.ToString()))
                                 {
@@ -503,6 +562,7 @@ namespace TemplateBot
                             }
                             else
                             {
+                                await Program.Log($"[AutoCreator] Creating text channel with name conversion mode", ConsoleColor.Cyan);
                                 var channel = CreateTxtChan(arg3.VoiceChannel.Name, arg3.VoiceChannel.Guild, true, arg3.VoiceChannel.Position + 20, AllowPerm, arg1, false, arg3.VoiceChannel.Id);
                                 if (VoiceON.Exists(x => x == Server.Id.ToString()))
                                 {
@@ -514,23 +574,39 @@ namespace TemplateBot
                     if (AutoCreator.Exists(x => x == arg3.VoiceChannel.Guild.Id.ToString()))
                     {
                         await Program.Log($"[AutoCreator-Cleanup] Starting cleanup for guild {arg3.VoiceChannel.Guild.Id}", ConsoleColor.Cyan);
-                        foreach (var item in arg3.VoiceChannel.Guild.VoiceChannels)
+                        var voiceChannels = arg3.VoiceChannel.Guild.VoiceChannels.ToList();
+                        await Program.Log($"[AutoCreator-Cleanup] Total voice channels to check: {voiceChannels.Count}", ConsoleColor.Cyan);
+                        foreach (var item in voiceChannels)
                         {
+                            await Program.Log($"[AutoCreator-Cleanup] Checking voice channel: {item.Name} ({item.Id}) with {item.Users.Count} users", ConsoleColor.Cyan);
+
+                            // Log who is in the voice channel
+                            if (item.Users.Count > 0)
+                            {
+                                foreach (var user in item.Users)
+                                {
+                                    await Program.Log($"[AutoCreator-Cleanup]   User in channel: {user.Username} ({user.Id}) [IsBot: {user.IsBot}]", ConsoleColor.Cyan);
+                                }
+                            }
+
                             if (item.Users.Count == 0)
                             {
                                 await Program.Log($"[AutoCreator-Cleanup] Found empty voice channel: {item.Name} ({item.Id})", ConsoleColor.Cyan);
-                                if (arg3.VoiceChannel.Guild.TextChannels.ToList().Exists(x => x.Topic != null && x.Topic.Contains(item.Id.ToString())))
+                                var textChannels = arg3.VoiceChannel.Guild.TextChannels.ToList();
+                                await Program.Log($"[AutoCreator-Cleanup] Searching through {textChannels.Count} text channels for topic containing {item.Id}", ConsoleColor.Cyan);
+                                if (textChannels.Exists(x => x.Topic != null && x.Topic.Contains(item.Id.ToString())))
                                 {
-                                    var channel = arg3.VoiceChannel.Guild.TextChannels.ToList().Find(x => x.Topic != null && x.Topic.Contains(item.Id.ToString()));
+                                    var channel = textChannels.Find(x => x.Topic != null && x.Topic.Contains(item.Id.ToString()));
                                     try
                                     {
-                                        await Program.Log($"[AutoCreator-Cleanup] Deleting text channel: {channel.Name} ({channel.Id})", ConsoleColor.Yellow);
+                                        await Program.Log($"[AutoCreator-Cleanup] Deleting text channel: {channel.Name} ({channel.Id}) with topic: {channel.Topic}", ConsoleColor.Yellow);
                                         await channel.DeleteAsync();
-                                        await Program.Log(arg1.Username + "(" + arg1.Id + ")" + " left channel " + channel.Name + "(" + channel.Id + ") - Channel have been removed!", ConsoleColor.Green);
+                                        await Program.Log($"[AutoCreator-Cleanup] Successfully deleted text channel {channel.Name} ({channel.Id})", ConsoleColor.Green);
                                     }
                                     catch (Exception ex)
                                     {
                                         await Program.Log($"[AutoCreator-Cleanup] ERROR deleting channel: {ex.Message}", ConsoleColor.Red);
+                                        await Program.Log($"[AutoCreator-Cleanup] Stack trace: {ex.StackTrace}", ConsoleColor.Red);
                                     }
                                 }
                                 else
@@ -539,12 +615,21 @@ namespace TemplateBot
                                 }
                             }
                         }
+                        await Program.Log($"[AutoCreator-Cleanup] Cleanup completed for guild {arg3.VoiceChannel.Guild.Id}", ConsoleColor.Cyan);
                     }
                 }
+                else
+                {
+                    await Program.Log($"[VoiceStateUpdate] User disconnected from all voice channels", ConsoleColor.Magenta);
+                }
+            }
+            else
+            {
+                await Program.Log($"[VoiceStateUpdate] Ignoring event - only mute/deaf state changed, not a channel change", ConsoleColor.Magenta);
             }
         }
-                
-                   
+
+
 
         public RestTextChannel CreateTxtChan(string Name, SocketGuild Guild, bool Convert, int VPosision, OverwritePermissions AllowPerm, SocketUser User, bool UsingTopic, ulong VChanID)
         {
@@ -582,7 +667,7 @@ namespace TemplateBot
             {
                 channel.ModifyAsync(x => x.Position = VPosision);
             }
-       
+
             Program.Log(User.Username + "(" + User.Id + ")" + " joined channel " + channel.Name + "(" + channel.Id + ") - Permission have been set!", ConsoleColor.Green);
 
             return channel;
@@ -622,7 +707,8 @@ namespace TemplateBot
                         }
                     }
                 }
-            }            int argPost = 0;
+            }
+            int argPost = 0;
             if (msg.HasCharPrefix('.', ref argPost))
             {
                 if (CommandPermissionHandler.IsAllowedToUseCommand(context))
