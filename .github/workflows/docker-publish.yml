@@ -10,6 +10,8 @@ on:
 env:
   REGISTRY: registry.k8s.sindrema.com
   IMAGE_NAME: images/autochat
+  K8S_REPO: SindreMA/sindre-k8s
+  K8S_DEPLOYMENT_PATH: manifests/discord-bots/autochat-deployment.yaml
 
 jobs:
   build-and-push:
@@ -25,31 +27,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Test Harbor connectivity
-        run: |
-          echo "Testing connectivity to Harbor registry..."
-          curl -v https://${{ env.REGISTRY }}/v2/ || true
-          echo "---"
-          echo "Testing with credentials..."
-          curl -v -u "$HARBOR_USERNAME:$HARBOR_PASSWORD" https://${{ env.REGISTRY }}/v2/ || true
-        env:
-          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
-          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
-
       - name: Log in to Harbor Registry
-        run: |
-          # Try different login methods
-          echo "Attempting Docker login..."
-          if echo "$HARBOR_PASSWORD" | docker login ${{ env.REGISTRY }} -u "$HARBOR_USERNAME" --password-stdin; then
-            echo "Login successful!"
-          else
-            echo "Login failed. Trying alternative method..."
-            # Try with explicit https:// prefix
-            echo "$HARBOR_PASSWORD" | docker login https://${{ env.REGISTRY }} -u "$HARBOR_USERNAME" --password-stdin || exit 1
-          fi
-        env:
-          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
-          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
+      - name: Generate timestamp tag
+        id: timestamp
+        run: echo "tag=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels)
         id: meta
@@ -57,8 +44,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
+            type=raw,value=${{ steps.timestamp.outputs.tag }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -71,3 +57,40 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+      - name: Checkout k8s manifests repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.K8S_REPO }}
+          path: k8s-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Kubernetes deployment
+        run: |
+          IMAGE_TAG="${{ steps.timestamp.outputs.tag }}"
+          echo "Updating deployment to use image tag: ${IMAGE_TAG}"
+          echo "Deployment file: ${K8S_DEPLOYMENT_PATH}"
+
+          # Update the deployment file
+          sed -i "s|image: ${REGISTRY}/${IMAGE_NAME}:.*|image: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}|g" \
+            "k8s-repo/${K8S_DEPLOYMENT_PATH}"
+
+          # Show the change
+          cat "k8s-repo/${K8S_DEPLOYMENT_PATH}" | grep image:
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          K8S_DEPLOYMENT_PATH: ${{ env.K8S_DEPLOYMENT_PATH }}
+
+      - name: Commit and push deployment update
+        run: |
+          cd k8s-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${K8S_DEPLOYMENT_PATH}"
+
+          IMAGE_TAG="${{ steps.timestamp.outputs.tag }}"
+          git commit -m "Update autochat deployment to image tag ${IMAGE_TAG}" || echo "No changes to commit"
+          git push
+        env:
+          K8S_DEPLOYMENT_PATH: ${{ env.K8S_DEPLOYMENT_PATH }}
