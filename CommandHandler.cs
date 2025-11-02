@@ -375,7 +375,7 @@ namespace TemplateBot
                                 await CheckMembers(channel);
 
                                 // Calculate actual user count excluding bots and the user who just left
-                                var actualUserCount = State.VoiceChannel.Users.Where(u => !u.IsBot && u.Id != arg1.Id).Count();
+                                var actualUserCount = State.VoiceChannel.Users.Where(u => !u.IsBot && u.Id != arg1.Id && u.VoiceChannel != null).Count();
                                 await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots and leaving user): {actualUserCount}", ConsoleColor.Yellow);
 
                                 if (AutoclearList.Exists(x => x == Server.Id.ToString()))
