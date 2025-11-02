@@ -374,14 +374,16 @@ namespace TemplateBot
 
                                 await CheckMembers(channel);
 
-                                // Calculate actual user count excluding bots and the user who just left
-                                var actualUserCount = State.VoiceChannel.Users.Where(u => !u.IsBot && u.Id != arg1.Id && u.VoiceChannel != null).Count();
-                                await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots and leaving user): {actualUserCount}", ConsoleColor.Yellow);
+                                // IMPORTANT: Get FRESH voice channel data from guild (State.VoiceChannel has stale cached data)
+                                var currentVoiceChannel = Server.GetVoiceChannel(State.VoiceChannel.Id);
+                                // Calculate actual user count excluding bots
+                                var actualUserCount = currentVoiceChannel.Users.Where(u => !u.IsBot).Count();
+                                await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots): {actualUserCount}", ConsoleColor.Yellow);
 
                                 if (AutoclearList.Exists(x => x == Server.Id.ToString()))
                                 {
                                     await Program.Log($"[AutoClear] Guild {Server.Id} has AutoClear enabled", ConsoleColor.Cyan);
-                                    await Program.Log($"[AutoClear] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCount})", ConsoleColor.Cyan);
+                                    await Program.Log($"[AutoClear] Voice channel users count: {currentVoiceChannel.Users.Count} (actual: {actualUserCount})", ConsoleColor.Cyan);
                                     if (actualUserCount == 0)
                                     {
                                         await Program.Log($"[AutoClear] Voice channel is empty, recreating text channel", ConsoleColor.Yellow);
@@ -389,13 +391,13 @@ namespace TemplateBot
                                         var posi = channel.Position;
                                         await channel.DeleteAsync();
                                         Thread.Sleep(200);
-                                        await CreateTxtChan(name, State.VoiceChannel.Guild, false, posi, AllowPerm, null, false, State.VoiceChannel.Id);
+                                        await CreateTxtChan(name, currentVoiceChannel.Guild, false, posi, AllowPerm, null, false, currentVoiceChannel.Id);
                                     }
                                 }
                                 if (AutoCreator.Exists(x => x == Server.Id.ToString()))
                                 {
                                     await Program.Log($"[AutoCreator] Guild {Server.Id} has AutoCreator enabled", ConsoleColor.Cyan);
-                                    await Program.Log($"[AutoCreator] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCount})", ConsoleColor.Cyan);
+                                    await Program.Log($"[AutoCreator] Voice channel users count: {currentVoiceChannel.Users.Count} (actual: {actualUserCount})", ConsoleColor.Cyan);
                                     if (actualUserCount == 0)
                                     {
                                         await Program.Log($"[AutoCreator] Voice channel is empty, deleting text channel permanently", ConsoleColor.Yellow);
@@ -435,14 +437,16 @@ namespace TemplateBot
 
                                     await CheckMembers(channel);
 
-                                    // Calculate actual user count excluding bots and the user who just left
-                                    var actualUserCountTopic = State.VoiceChannel.Users.Where(u => !u.IsBot && u.Id != arg1.Id).Count();
-                                    await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots and leaving user): {actualUserCountTopic}", ConsoleColor.Yellow);
+                                    // IMPORTANT: Get FRESH voice channel data from guild (State.VoiceChannel has stale cached data)
+                                    var currentVoiceChannelTopic = Server.GetVoiceChannel(State.VoiceChannel.Id);
+                                    // Calculate actual user count excluding bots
+                                    var actualUserCountTopic = currentVoiceChannelTopic.Users.Where(u => !u.IsBot).Count();
+                                    await Program.Log($"[VoiceStateUpdate] Actual user count (excluding bots): {actualUserCountTopic}", ConsoleColor.Yellow);
 
                                     if (AutoclearList.Exists(x => x == Server.Id.ToString()))
                                     {
                                         await Program.Log($"[AutoClear-Topic] Guild {Server.Id} has AutoClear enabled", ConsoleColor.Cyan);
-                                        await Program.Log($"[AutoClear-Topic] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCountTopic})", ConsoleColor.Cyan);
+                                        await Program.Log($"[AutoClear-Topic] Voice channel users count: {currentVoiceChannelTopic.Users.Count} (actual: {actualUserCountTopic})", ConsoleColor.Cyan);
                                         if (actualUserCountTopic == 0)
                                         {
                                             await Program.Log($"[AutoClear-Topic] Voice channel is empty, recreating text channel", ConsoleColor.Yellow);
@@ -450,13 +454,13 @@ namespace TemplateBot
                                             var posi = channel.Position;
                                             await channel.DeleteAsync();
                                             Thread.Sleep(100);
-                                            await CreateTxtChan(name, State.VoiceChannel.Guild, false, posi, AllowPerm, null, false, State.VoiceChannel.Id);
+                                            await CreateTxtChan(name, currentVoiceChannelTopic.Guild, false, posi, AllowPerm, null, false, currentVoiceChannelTopic.Id);
                                         }
                                     }
                                     if (AutoCreator.Exists(x => x == Server.Id.ToString()))
                                     {
                                         await Program.Log($"[AutoCreator-Topic] Guild {Server.Id} has AutoCreator enabled", ConsoleColor.Cyan);
-                                        await Program.Log($"[AutoCreator-Topic] Voice channel users count: {State.VoiceChannel.Users.Count} (actual: {actualUserCountTopic})", ConsoleColor.Cyan);
+                                        await Program.Log($"[AutoCreator-Topic] Voice channel users count: {currentVoiceChannelTopic.Users.Count} (actual: {actualUserCountTopic})", ConsoleColor.Cyan);
                                         if (actualUserCountTopic == 0)
                                         {
                                             await Program.Log($"[AutoCreator-Topic] Voice channel is empty, deleting text channel permanently", ConsoleColor.Yellow);
