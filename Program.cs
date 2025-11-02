@@ -35,7 +35,7 @@ namespace CSharp_AutoChatV2
                 }
                 catch (Exception)
                 {
-                    Log("Cannot import token from environment variable or JSON file!", ConsoleColor.Red);
+                    await Log("Cannot import token from environment variable or JSON file!", ConsoleColor.Red);
                 }
             }
             else
@@ -60,7 +60,7 @@ namespace CSharp_AutoChatV2
             }
             catch (Exception)
             {
-                Log("error at login, check that token is valid!", ConsoleColor.Red);
+                await Log("error at login, check that token is valid!", ConsoleColor.Red);
                 Console.ReadLine();
             }
 
@@ -76,6 +76,8 @@ namespace CSharp_AutoChatV2
             Console.ForegroundColor = color;
             Console.WriteLine(DateTime.Now + " : " + message, color);
             Console.ResetColor();
+
+            await Task.CompletedTask;
         }
 
         public static string Replaceemoji(string inn)        {            string result = Regex.Replace(inn, @"\p{Cs}", "_");            return result;        }

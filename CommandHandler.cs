@@ -107,7 +107,6 @@ namespace TemplateBot
             await Program.Log($"[VoiceStateUpdate] Old channel: {(arg2.VoiceChannel != null ? $"{arg2.VoiceChannel.Name} ({arg2.VoiceChannel.Id})" : "null")}", ConsoleColor.Magenta);
             await Program.Log($"[VoiceStateUpdate] New channel: {(arg3.VoiceChannel != null ? $"{arg3.VoiceChannel.Name} ({arg3.VoiceChannel.Id})" : "null")}", ConsoleColor.Magenta);
 
-            string guildID = "";
             bool Isdiffrent = false;
             if (arg2.VoiceChannel != null)
             {
@@ -181,7 +180,9 @@ namespace TemplateBot
                         PermValue manageMessages;
                         PermValue sendTTSMessages;
                         PermValue createInstantInvite;
+#pragma warning disable CS0219 // Variable is assigned but its value is never used
                         PermValue managePermissions;
+#pragma warning restore CS0219 // Variable is assigned but its value is never used
                         PermValue manageChannel;
                         PermValue manageWebhooks;
                         if (item.Permissions.ReadMessages)
@@ -388,7 +389,7 @@ namespace TemplateBot
                                         var posi = channel.Position;
                                         await channel.DeleteAsync();
                                         Thread.Sleep(200);
-                                        CreateTxtChan(name, State.VoiceChannel.Guild, false, posi, AllowPerm, null, false, State.VoiceChannel.Id);
+                                        await CreateTxtChan(name, State.VoiceChannel.Guild, false, posi, AllowPerm, null, false, State.VoiceChannel.Id);
                                     }
                                 }
                                 if (AutoCreator.Exists(x => x == Server.Id.ToString()))
@@ -449,7 +450,7 @@ namespace TemplateBot
                                             var posi = channel.Position;
                                             await channel.DeleteAsync();
                                             Thread.Sleep(100);
-                                            CreateTxtChan(name, State.VoiceChannel.Guild, false, posi, AllowPerm, null, false, State.VoiceChannel.Id);
+                                            await CreateTxtChan(name, State.VoiceChannel.Guild, false, posi, AllowPerm, null, false, State.VoiceChannel.Id);
                                         }
                                     }
                                     if (AutoCreator.Exists(x => x == Server.Id.ToString()))
@@ -554,7 +555,7 @@ namespace TemplateBot
                             if (UseTopic.Exists(x => x == Server.Id.ToString()))
                             {
                                 await Program.Log($"[AutoCreator] Creating text channel with topic mode", ConsoleColor.Cyan);
-                                var channel = CreateTxtChan(arg3.VoiceChannel.Name, arg3.VoiceChannel.Guild, false, arg3.VoiceChannel.Position + 20, AllowPerm, arg1, true, arg3.VoiceChannel.Id);
+                                var channel = await CreateTxtChan(arg3.VoiceChannel.Name, arg3.VoiceChannel.Guild, false, arg3.VoiceChannel.Position + 20, AllowPerm, arg1, true, arg3.VoiceChannel.Id);
                                 if (VoiceON.Exists(x => x == Server.Id.ToString()))
                                 {
                                     await channel.SendMessageAsync(arg1.Username + " joined the channel!");
@@ -563,7 +564,7 @@ namespace TemplateBot
                             else
                             {
                                 await Program.Log($"[AutoCreator] Creating text channel with name conversion mode", ConsoleColor.Cyan);
-                                var channel = CreateTxtChan(arg3.VoiceChannel.Name, arg3.VoiceChannel.Guild, true, arg3.VoiceChannel.Position + 20, AllowPerm, arg1, false, arg3.VoiceChannel.Id);
+                                var channel = await CreateTxtChan(arg3.VoiceChannel.Name, arg3.VoiceChannel.Guild, true, arg3.VoiceChannel.Position + 20, AllowPerm, arg1, false, arg3.VoiceChannel.Id);
                                 if (VoiceON.Exists(x => x == Server.Id.ToString()))
                                 {
                                     await channel.SendMessageAsync(arg1.Username + " joined the channel!");
@@ -631,7 +632,7 @@ namespace TemplateBot
 
 
 
-        public RestTextChannel CreateTxtChan(string Name, SocketGuild Guild, bool Convert, int VPosision, OverwritePermissions AllowPerm, SocketUser User, bool UsingTopic, ulong VChanID)
+        public async Task<RestTextChannel> CreateTxtChan(string Name, SocketGuild Guild, bool Convert, int VPosision, OverwritePermissions AllowPerm, SocketUser User, bool UsingTopic, ulong VChanID)
         {
             var name = Name;
             if (Convert)
@@ -642,33 +643,38 @@ namespace TemplateBot
             {
                 name = Program.NameConverter(Name);
             }
-            var channel = Guild.CreateTextChannelAsync(name).Result;
-            channel.AddPermissionOverwriteAsync(_client.CurrentUser, Discord.OverwritePermissions.AllowAll(channel));
+            var channel = await Guild.CreateTextChannelAsync(name);
+
+            // IMPORTANT: Await all permission operations to ensure they complete
+            await channel.AddPermissionOverwriteAsync(_client.CurrentUser, Discord.OverwritePermissions.AllowAll(channel));
             if (User != null)
             {
-                channel.AddPermissionOverwriteAsync(User, AllowPerm, Discord.RequestOptions.Default);
+                await channel.AddPermissionOverwriteAsync(User, AllowPerm, Discord.RequestOptions.Default);
             }
-            channel.AddPermissionOverwriteAsync(Guild.EveryoneRole, Discord.OverwritePermissions.DenyAll(channel));
+            await channel.AddPermissionOverwriteAsync(Guild.EveryoneRole, Discord.OverwritePermissions.DenyAll(channel));
+
             if (UsingTopic)
             {
-                channel.ModifyAsync(x => x.Topic = VChanID.ToString());
+                await channel.ModifyAsync(x => x.Topic = VChanID.ToString());
             }
+
+            // IMPORTANT: Await category assignment to ensure channel is moved
             if (CatagoryGuilds.Exists(x=> x.GuildID == Guild.Id))
             {
                 var item = CatagoryGuilds.Single(x => x.GuildID == Guild.Id);
                 if (Guild.CategoryChannels.ToList().Exists(x=> x.Id == item.CatagoryID))
                 {
                     var category = Guild.CategoryChannels.FirstOrDefault(x => x.Id == item.CatagoryID);
-                    channel.ModifyAsync(x => { x.CategoryId = category.Id; });
+                    await channel.ModifyAsync(x => { x.CategoryId = category.Id; });
                 }
 
             }
             else
             {
-                channel.ModifyAsync(x => x.Position = VPosision);
+                await channel.ModifyAsync(x => x.Position = VPosision);
             }
 
-            Program.Log(User.Username + "(" + User.Id + ")" + " joined channel " + channel.Name + "(" + channel.Id + ") - Permission have been set!", ConsoleColor.Green);
+            await Program.Log(User.Username + "(" + User.Id + ")" + " joined channel " + channel.Name + "(" + channel.Id + ") - Permission have been set!", ConsoleColor.Green);
 
             return channel;
         }
