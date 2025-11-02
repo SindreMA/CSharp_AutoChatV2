@@ -25,22 +25,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Debug - Check secrets are set
+      - name: Test Harbor connectivity
         run: |
-          echo "Registry: ${{ env.REGISTRY }}"
-          echo "Username length: ${#HARBOR_USERNAME}"
-          echo "Password length: ${#HARBOR_PASSWORD}"
-          if [ -z "$HARBOR_USERNAME" ] || [ -z "$HARBOR_PASSWORD" ]; then
-            echo "ERROR: HARBOR_USERNAME or HARBOR_PASSWORD is not set!"
-            exit 1
-          fi
+          echo "Testing connectivity to Harbor registry..."
+          curl -v https://${{ env.REGISTRY }}/v2/ || true
+          echo "---"
+          echo "Testing with credentials..."
+          curl -v -u "$HARBOR_USERNAME:$HARBOR_PASSWORD" https://${{ env.REGISTRY }}/v2/ || true
         env:
           HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
           HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
 
       - name: Log in to Harbor Registry
         run: |
-          echo "$HARBOR_PASSWORD" | docker login ${{ env.REGISTRY }} -u "$HARBOR_USERNAME" --password-stdin
+          # Try different login methods
+          echo "Attempting Docker login..."
+          if echo "$HARBOR_PASSWORD" | docker login ${{ env.REGISTRY }} -u "$HARBOR_USERNAME" --password-stdin; then
+            echo "Login successful!"
+          else
+            echo "Login failed. Trying alternative method..."
+            # Try with explicit https:// prefix
+            echo "$HARBOR_PASSWORD" | docker login https://${{ env.REGISTRY }} -u "$HARBOR_USERNAME" --password-stdin || exit 1
+          fi
         env:
           HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
           HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
