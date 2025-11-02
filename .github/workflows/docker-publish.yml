@@ -63,7 +63,7 @@ jobs:
         with:
           repository: ${{ env.K8S_REPO }}
           path: k8s-repo
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       - name: Update Kubernetes deployment
         run: |
