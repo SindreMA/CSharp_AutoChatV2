@@ -721,19 +721,27 @@ namespace TemplateBot
             int argPost = 0;
             if (msg.HasCharPrefix('.', ref argPost))
             {
-                if (CommandPermissionHandler.IsAllowedToUseCommand(context))
+                var result = await _service.ExecuteAsync(context, argPost, null);
+
+                // Only show permission error if it's a valid command but user lacks permissions
+                if (!result.IsSuccess)
                 {
-                    var result = _service.ExecuteAsync(context, argPost, null);
-                    if (!result.Result.IsSuccess && result.Result.Error != CommandError.UnknownCommand)
+                    if (result.Error == CommandError.UnmetPrecondition ||
+                        (result.Error != CommandError.UnknownCommand && !CommandPermissionHandler.IsAllowedToUseCommand(context)))
                     {
-                        await context.Channel.SendMessageAsync(result.Result.ErrorReason);
+                        await Program.Log("Invoked " + msg + " in " + context.Channel + " with Permission Error!", ConsoleColor.Magenta);
+                        await context.Channel.SendMessageAsync($@"You need {CommandPermissionHandler.PermissionNeed(context.Guild.Id)} to use the commands on this bot!");
                     }
-                    await Program.Log("Invoked " + msg + " in " + context.Channel + " with " + result.Result, ConsoleColor.Magenta);
+                    else if (result.Error != CommandError.UnknownCommand)
+                    {
+                        await context.Channel.SendMessageAsync(result.ErrorReason);
+                        await Program.Log("Invoked " + msg + " in " + context.Channel + " with " + result, ConsoleColor.Magenta);
+                    }
+                    // If UnknownCommand, silently ignore (don't spam users for typos or non-commands)
                 }
                 else
                 {
-                    await Program.Log("Invoked " + msg + " in " + context.Channel + " with Permission Error!", ConsoleColor.Magenta);
-                    await context.Channel.SendMessageAsync($@"You need {CommandPermissionHandler.PermissionNeed(context.Guild.Id)} to use the commands on this bot!");
+                    await Program.Log("Invoked " + msg + " in " + context.Channel + " with " + result, ConsoleColor.Magenta);
                 }
             }
             else
